@@ -1,0 +1,3 @@
+Reliability means retries, timeouts, and failure isolation.
+Observability means logs, metrics, and traces for each step.
+Cost and latency must be measured per run and per version.

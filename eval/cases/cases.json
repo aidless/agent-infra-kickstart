@@ -1,0 +1,331 @@
+[
+  {
+    "name": "happy_path",
+    "mode": "plan",
+    "topic": "Agent Infra",
+    "corpus": "sample_input",
+    "expect_status": "succeeded",
+    "expect_report_contains": [
+      "# Report: Agent Infra",
+      "## Top keywords",
+      "## Per-file stats"
+    ],
+    "expect_files_analyzed": 3,
+    "expect_min_keywords": 5
+  },
+  {
+    "name": "resume_after_write_failure",
+    "mode": "plan",
+    "topic": "Agent Infra",
+    "corpus": "sample_input",
+    "fail_on_step": "write_report",
+    "resume_runs": 1,
+    "expect_status": "succeeded",
+    "expect_report_contains": [
+      "# Report: Agent Infra",
+      "Files analyzed: 3"
+    ],
+    "expect_files_analyzed": 3
+  },
+  {
+    "name": "fail_fast_no_resume",
+    "mode": "plan",
+    "topic": "Agent Infra",
+    "corpus": "sample_input",
+    "fail_on_step": "extract_info",
+    "expect_status": "interrupted",
+    "expect_error_code": "SIMULATED",
+    "expect_error_step": "extract_info",
+    "expect_no_report": true
+  },
+  {
+    "name": "missing_input_dir",
+    "mode": "plan",
+    "topic": "Agent Infra",
+    "input_dir": "/tmp/definitely_not_here_xyz",
+    "expect_status": "failed",
+    "expect_error_code": "NOT_FOUND",
+    "expect_no_report": true
+  },
+  {
+    "name": "real_corpus_notes",
+    "mode": "plan",
+    "topic": "agent reliability metadata",
+    "corpus": "notes",
+    "expect_status": "succeeded",
+    "expect_report_contains": [
+      "# Report: agent reliability metadata",
+      "## Per-file stats"
+    ],
+    "expect_files_analyzed": 4,
+    "expect_min_keywords": 5,
+    "expect_trace_out_chars_min": 1000
+  },
+  {
+    "name": "real_corpus_nested_only",
+    "mode": "plan",
+    "topic": "agent",
+    "corpus": "nested",
+    "expect_status": "succeeded",
+    "expect_files_analyzed": 1,
+    "expect_min_keywords": 1
+  },
+  {
+    "name": "edge_mixed_empty_and_binary",
+    "mode": "plan",
+    "topic": "agent",
+    "corpus": "mixed",
+    "expect_status": "succeeded",
+    "expect_files_analyzed": 3,
+    "expect_report_contains": [
+      "one_line.txt"
+    ]
+  },
+  {
+    "name": "edge_truly_empty_dir",
+    "mode": "plan",
+    "topic": "agent",
+    "corpus": "truly_empty",
+    "expect_status": "failed",
+    "expect_error_code": "BAD_INPUT",
+    "expect_no_report": true
+  },
+  {
+    "name": "edge_binary_decode_tolerated",
+    "mode": "plan",
+    "topic": "agent",
+    "corpus": "binary",
+    "expect_status": "succeeded",
+    "expect_files_analyzed": 1
+  },
+  {
+    "name": "step_timeout_interrupts_then_resumes",
+    "mode": "plan",
+    "topic": "agent",
+    "corpus": "edge",
+    "timeout_on_step": "extract_info",
+    "timeout_ms": 1,
+    "resume_runs": 1,
+    "expect_status": "succeeded",
+    "expect_trace_error_code": "TIMEOUT",
+    "expect_report_contains": [
+      "## Top keywords"
+    ],
+    "expect_no_report": false
+  },
+  {
+    "name": "retry_budget_then_interrupt",
+    "mode": "plan",
+    "topic": "agent",
+    "corpus": "edge",
+    "timeout_on_step": "extract_info",
+    "timeout_ms": 1,
+    "max_retries": 1,
+    "expect_status": "interrupted",
+    "expect_error_code": "TIMEOUT",
+    "expect_min_attempts": 2,
+    "expect_no_report": true,
+    "backoff_base_ms": 0,
+    "expect_retry_delays": [
+      0
+    ]
+  },
+  {
+    "name": "rerun_idempotent_report",
+    "mode": "plan",
+    "topic": "Agent Infra",
+    "corpus": "sample_input",
+    "run_twice": true,
+    "expect_status": "succeeded",
+    "expect_files_analyzed": 3
+  },
+  {
+    "name": "tool_list_files_nested_glob",
+    "mode": "tool",
+    "corpus": "nested",
+    "tool": {
+      "name": "list_files",
+      "args": {
+        "directory": "corpus/edge",
+        "glob": "*.txt",
+        "limit": 50
+      }
+    },
+    "expect_output_value": {
+      "count": 5
+    }
+  },
+  {
+    "name": "tool_path_escape_blocked",
+    "mode": "tool",
+    "corpus": "sample_input",
+    "tool": {
+      "name": "write_text",
+      "args": {
+        "path": "../escape.md",
+        "content": "x"
+      }
+    },
+    "expect_tool_ok": false,
+    "expect_error_code": "PATH_ESCAPE"
+  },
+  {
+    "name": "tool_write_idempotent_second_call",
+    "mode": "tool",
+    "corpus": "sample_input",
+    "tool_calls": [
+      {
+        "name": "write_text",
+        "args": {
+          "path": "out/a.md",
+          "content": "stable body"
+        }
+      },
+      {
+        "name": "write_text",
+        "args": {
+          "path": "out/a.md",
+          "content": "stable body"
+        },
+        "expect_output_value": {
+          "written": false,
+          "idempotent": true
+        }
+      }
+    ],
+    "expect_file_exists": "out/a.md"
+  },
+  {
+    "name": "tool_extract_keywords_bad_input",
+    "mode": "tool",
+    "corpus": "sample_input",
+    "tool": {
+      "name": "extract_keywords",
+      "args": {
+        "paths": [],
+        "topic": "agent"
+      }
+    },
+    "expect_tool_ok": false,
+    "expect_error_code": "BAD_INPUT"
+  },
+  {
+    "name": "tool_extract_keywords_missing_file",
+    "mode": "tool",
+    "corpus": "sample_input",
+    "tool": {
+      "name": "extract_keywords",
+      "args": {
+        "paths": [
+          "/tmp/nope_xyz.txt"
+        ],
+        "topic": "agent"
+      }
+    },
+    "expect_tool_ok": false,
+    "expect_error_code": "NOT_FOUND"
+  },
+  {
+    "name": "tool_summarize_real_doc",
+    "mode": "tool",
+    "corpus": "one_file",
+    "tool": {
+      "name": "summarize_text",
+      "args": {
+        "path": "doc2.md",
+        "preview_chars": 120
+      }
+    },
+    "expect_output_value": {
+      "path_suffix": "doc2.md"
+    }
+  },
+  {
+    "name": "tool_unknown_tool_rejected",
+    "mode": "tool",
+    "corpus": "sample_input",
+    "tool": {
+      "name": "rm_rf_everything",
+      "args": {},
+      "expect_tool_ok": false
+    },
+    "expect_tool_ok": false,
+    "expect_error_code": "UNKNOWN_TOOL"
+  },
+  {
+    "name": "resume_after_complete_is_noop",
+    "mode": "plan",
+    "topic": "Agent Infra",
+    "corpus": "sample_input",
+    "run_twice": true,
+    "expect_status": "succeeded",
+    "expect_files_analyzed": 3
+  },
+  {
+    "name": "edge_single_empty_file",
+    "mode": "plan",
+    "topic": "agent",
+    "corpus": "empty_only",
+    "expect_status": "succeeded",
+    "expect_files_analyzed": 1,
+    "expect_report_contains": [
+      "## Top keywords",
+      "only_empty.txt"
+    ]
+  },
+  {
+    "name": "retry_backoff_schedule_exponential",
+    "mode": "plan",
+    "topic": "agent",
+    "corpus": "edge",
+    "timeout_on_step": "extract_info",
+    "timeout_ms": 1,
+    "max_retries": 3,
+    "backoff_base_ms": 200,
+    "backoff_cap_ms": 400,
+    "expect_status": "interrupted",
+    "expect_error_code": "TIMEOUT",
+    "expect_no_report": true,
+    "expect_min_attempts": 4,
+    "expect_retry_delays": [
+      200,
+      400,
+      400
+    ],
+    "expect_trace_error_code": "TIMEOUT"
+  },
+  {
+    "name": "cost_fields_on_every_step",
+    "mode": "plan",
+    "topic": "agent reliability",
+    "corpus": "notes",
+    "price_id": "fixture-cheap",
+    "expect_status": "succeeded",
+    "expect_files_analyzed": 4,
+    "expect_trace_out_chars_min": 1000
+  },
+  {
+    "name": "cost_summary_clean_rows",
+    "mode": "cost",
+    "topic": "agent reliability",
+    "corpus": "notes",
+    "price_id": "fixture-standard",
+    "expect_status": "succeeded",
+    "expect_files_analyzed": 4,
+    "expect_cost_mismatches": 0,
+    "expect_cost_positive": true,
+    "expect_cost_tokens_min": 500
+  },
+  {
+    "name": "cost_summary_detects_tampered_row",
+    "mode": "cost",
+    "topic": "agent reliability",
+    "corpus": "notes",
+    "price_id": "fixture-standard",
+    "expect_status": "succeeded",
+    "expect_files_analyzed": 4,
+    "tamper_cost_row": true,
+    "tamper_row_index": 1,
+    "expect_cost_mismatches": 1
+  }
+]

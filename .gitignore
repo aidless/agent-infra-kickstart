@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+runs/
+eval/last_contract.json
+# generated fixture (rebuild with: python3 corpus/make_edge.py)
+corpus/edge/large.txt
+
+# large crawled corpora (89 MB) — rebuild with signals/fetch_*.py + enrich_tier_a.py
+signals/raw/
+
+# private job-hunt working notes (company-by-company assessment) — not published
+signals/gap-mapping-*.md
+signals/jobs-live-*.md
+signals/liveness_*.json
+signals/candidates_zh.json
+
+.pytest_cache/

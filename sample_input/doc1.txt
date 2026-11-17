@@ -1,0 +1,3 @@
+Agent infrastructure focuses on runtime reliability, state management, and observability.
+Long-running agents need checkpointing, recovery, and idempotent tool execution.
+Evaluation gates and traces help teams ship changes safely.
