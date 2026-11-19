@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import os
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .cost import DEFAULT_PRICE_ID, cost_fields
+from .finish_guard import prestop_verify
 from .state import Session, Step, Store, new_id, now_iso
 from .tools import (
     RETRYABLE_ERROR_CODES,
@@ -248,7 +250,47 @@ def run_session(
                 store.append_event(session.session_id, f"session.{session.status}", {"at_step": step.name, "error_code": step.error_code})
                 return session
 
+    # ── finish guards（harness 改造 1+2，来源见 agent/finish_guard.py 头部）──
+    # 空 diff guard + pre-stop verifier：终态前必须自证，否则不记 succeeded。
+    # 不改任务提示词（Table IV：prompt-only 行把未验证退出抬到 30%，是反例）。
+    g = prestop_verify(
+        run_dir,
+        produced_paths=_produced_paths(session),
+        py_files=_touched_py_files(run_dir),
+        verify_cmd=os.environ.get("AIK_VERIFY_CMD"),
+        verify_timeout_s=float(os.environ.get("AIK_VERIFY_TIMEOUT_S", "120")),
+    )
+    # guard 结果只落 event（append-only 日志），不写进 trace：
+    # trace 每行都带 token/rate 成本字段，且与 state.steps 一一对应；
+    # guard 不是任务步骤，硬塞进去会破坏既有「trace 可复算成本」不变量。
+    store.append_event(session.session_id, "finish_guard.checked", g.as_dict())
+    if not g.ok:
+        # Session 没有 error 字段（dataclass 固定字段集，额外属性不会落盘），
+        # 失败原因全部走 event + trace，由 append-only 日志承载。
+        session.status = "failed"
+        store.append_event(session.session_id, "session.blocked_by_guard",
+                           {"code": g.code, "detail": g.detail})
+        store.save(session)
+        return session
+
     session.status = "succeeded"
     store.append_event(session.session_id, "session.succeeded", {"steps": len(session.steps)})
     store.save(session)
     return session
+
+
+def _produced_paths(session: Session) -> List[str]:
+    """本次 session 实际写出的产物路径（write_text 返回 written=True 的那些）。"""
+    out: List[str] = []
+    for s in session.steps:
+        o = s.output
+        if isinstance(o, dict) and o.get("written") and o.get("path"):
+            out.append(str(o["path"]))
+    return out
+
+
+def _touched_py_files(run_dir: Path) -> List[str]:
+    """run_dir 下属于本次产出的 .py（只做编译自检，不执行）。"""
+    if not run_dir.exists():
+        return []
+    return [str(p) for p in sorted(run_dir.rglob("*.py"))]

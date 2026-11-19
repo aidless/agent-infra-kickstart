@@ -57,5 +57,5 @@
 | Trace 体积代理 | 每行带 `out_chars`/`out_items`/`attempt`；这是输出体积，不是 token，也不是钱 | `agent/tools.py` `measure_output`、`agent/runner.py` |
 | 成本可复算 | 每行记 `estimator`/`price_id`/`price_in_per_mtok`/`price_out_per_mtok`/`tokens_in_est`/`tokens_out_est`/`cost_usd`，费率随行落盘，价目表日后改动不影响旧行解释；`show` 汇总时逐行重算，`mismatches` 必须为空 | `agent/cost.py`、`agent/main.py` `trace_cost_summary` |
 | 指数退避 | `backoff_delay_ms(attempt, base, cap) = min(base*2^(attempt-1), cap)`；`base=0` 关掉等待但仍在事件流里记录计划；每次排程都写 `step.retry_scheduled` 事件 | `agent/runner.py` |
-| 评测门禁 | 25 条用例（16 会话级 + 7 工具级 + 2 成本汇总级）+ 5 处注入反证 | `eval/run_eval.py`、`eval/cases/cases.json`、`eval/prove_red.py`、`eval/COVERAGE.md` |
+| 评测门禁 | 28 条用例（16 会话级 + 10 工具级 + 2 成本汇总级）+ 5 处注入反证 | `eval/run_eval.py`、`eval/cases/cases.json`、`eval/prove_red.py`、`eval/COVERAGE.md` |
 | 语料 | `sample_input/`（合成 3 文件）+ `corpus/notes/`（4 篇真实笔记 41 KB）+ `corpus/edge|mixed|truly_empty|one_file|binary/`（边界） | `corpus/`、`corpus/make_edge.py`（生成物重建） |

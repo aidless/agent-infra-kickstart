@@ -13,5 +13,21 @@ signals/gap-mapping-*.md
 signals/jobs-live-*.md
 signals/liveness_*.json
 signals/candidates_zh.json
+signals/candidates_junior.json
+signals/junior-jobs-*.md
+signals/jobs-matched-*.md
+signals/jobs_matched_*.json
+signals/jobs-eligible-*.md
+signals/jobs_eligible_*.json
+signals/jobs-all-ai-*.md
+signals/all_ai_eligible_*.json
+signals/filter_matched_jobs.py
+signals/filter_position_rules.py
+signals/filter_all_ai.py
+signals/gen_matched_md.py
+signals/gen_eligible_md.py
+signals/gen_all_ai_md.py
+signals/gen_deliver_pack.py
+signals/deliver-pack-*.md
 
 .pytest_cache/

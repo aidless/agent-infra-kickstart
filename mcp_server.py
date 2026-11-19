@@ -86,6 +86,27 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
             "required": ["path"],
         },
     },
+    {
+        "name": "read_file_window",
+        "title": "Read one window of a readable file",
+        "description": (
+            "Return a bounded page of a file: numbered lines from start_line, at most "
+            "max_lines lines and max_chars characters. Reports total_lines, truncated "
+            "and next_start so a caller can page instead of loading the whole file."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "File to read (relative to run dir or input dir)."},
+                "start_line": {"type": "integer", "minimum": 1, "description": "1-based first line of the page."},
+                "max_lines": {"type": "integer", "minimum": 1, "maximum": 200,
+                              "description": "Page size in lines (server caps at 200)."},
+                "max_chars": {"type": "integer", "minimum": 1, "maximum": 20000,
+                              "description": "Page size in characters (server caps at 20000)."},
+            },
+            "required": ["path"],
+        },
+    },
 ]
 
 

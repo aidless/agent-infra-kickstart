@@ -327,5 +327,49 @@
     "tamper_cost_row": true,
     "tamper_row_index": 1,
     "expect_cost_mismatches": 1
+  },
+  {
+    "name": "tool_read_file_window_page",
+    "mode": "tool",
+    "corpus": "one_file",
+    "tool": {
+      "name": "read_file_window",
+      "args": {
+        "path": "doc2.md",
+        "start_line": 1,
+        "max_lines": 3
+      }
+    },
+    "expect_output_value": {
+      "start_line": 1,
+      "returned_lines": 3
+    }
+  },
+  {
+    "name": "tool_read_file_window_oversized_params_rejected",
+    "mode": "tool",
+    "corpus": "one_file",
+    "tool": {
+      "name": "read_file_window",
+      "args": {
+        "path": "doc2.md",
+        "max_lines": 100000
+      }
+    },
+    "expect_tool_ok": false,
+    "expect_error_code": "BAD_INPUT"
+  },
+  {
+    "name": "tool_read_file_window_missing_file",
+    "mode": "tool",
+    "corpus": "one_file",
+    "tool": {
+      "name": "read_file_window",
+      "args": {
+        "path": "nope_xyz.md"
+      }
+    },
+    "expect_tool_ok": false,
+    "expect_error_code": "NOT_FOUND"
   }
 ]

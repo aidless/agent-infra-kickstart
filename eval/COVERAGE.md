@@ -1,4 +1,4 @@
-# 评测集覆盖表（25 条）
+# 评测集覆盖表（28 条）
 
 > 运行：`python3 eval/run_eval.py`（全绿 exit 0）／`python3 eval/run_eval.py <case_name>`（单条）
 > 红证：`python3 eval/prove_red.py`（5 处注入，每处必须 exit≠0）
@@ -27,7 +27,7 @@
 | 15 | `retry_backoff_schedule_exponential` | `corpus/edge` | 退避序列是 base×2^(n-1) 且被 cap 截断，且真的写进事件流 | `expect_retry_delays=[200,400,400]`（base=200, cap=400, retries=3）；`min_attempts>=4`；interrupted |
 | 16 | `cost_fields_on_every_step` | `corpus/notes` | 每步 token/价格/成本可复算，且用非默认价目表也自洽 | `trace_cost_recomputable`（按行内记下的费率重算）；`trace_cost_nonzero_when_tokens_nonzero`；`price_id=fixture-cheap` |
 
-## 二、工具级（7 条，直接调 4 个工具，不经会话）
+## 二、工具级（10 条，直接调 4 个工具，不经会话）
 
 | # | 用例 | 测什么 | 关键断言 |
 |---|---|---|---|
@@ -38,6 +38,9 @@
 | 18 | `tool_extract_keywords_missing_file` | 不存在的文件路径 | `ok=false`；`NOT_FOUND` |
 | 19 | `tool_summarize_real_doc` | 真实文档摘要字段 | 输出 `path` 以 `doc2.md` 结尾 |
 | 20 | `tool_unknown_tool_rejected` | 注册表必须封闭 | 未注册工具被拒（`UNKNOWN_TOOL`），不许静默通过 |
+| 21 | `tool_read_file_window_page` | 按行分页读取（`start_line`/`max_lines`） | `expect_output_value`：`start_line=1`、`returned_lines=3` |
+| 22 | `tool_read_file_window_oversized_params_rejected` | 服务端硬上限：`max_lines` 超限必须拒绝 | `expect_tool_ok=false`；`error_code=BAD_INPUT` |
+| 23 | `tool_read_file_window_missing_file` | 不存在文件 | `expect_tool_ok=false`；`error_code=NOT_FOUND` |
 
 ## 三、成本汇总级（2 条，先跑完整计划再核对 trace 汇总）
 
@@ -46,7 +49,7 @@
 | 24 | `cost_summary_clean_rows` | 干净 trace 的总 token/总成本可重算 | `cost_mismatch_count=0`；总成本 >0；总 token ≥500 |
 | 25 | `cost_summary_detects_tampered_row` | **检测器的正控**：手工把某行 `cost_usd` 改大，必须被报出 | `cost_mismatch_count=1` |
 
-> 第 25 条是给第 24 条配的「能红」证明：只断言「mismatches 为空」的检测器，永远为空也照样通过。
+> 成本汇总级的 2 条是配对的「能红」证明：只断言「mismatches 为空」的检测器，永远为空也照样通过。
 
 ## 四、断言分层（所有会话级用例共同生效）
 

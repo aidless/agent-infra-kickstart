@@ -193,3 +193,17 @@ python3 signals/analyze_axes.py --globs 'enriched_zh.json' --out signals/raw/axe
 - §9 阈值等下一期复跑（`tool_mcp` 受控 ≥60% 且 `runtime` hard_soft ≥1.2 = 拐点确认）
 - 中文侧 `ai_and_platform` 只有 178 条，若要出结论需再补量
 - 把 §4.3 的家族结论回填进 README 的「这个项目测什么」
+
+---
+
+## Week 0.9（2026-11-18）独立数据源验证 + 在招复核
+
+**任务**：用户「继续研究ai岗位」→「全做」= 三件事：① 换真正独立数据源验证核心结论 ② 挖 junior 可投岗 ③ 重跑 60 条 liveness。
+
+**① 验证陷阱 → 正确解法（方向复刻成功）**
+- 先用 freehire 官方 `ai_archetype` 想独立验证 §4.3，结果**失败**：它与八轴正则同源共线（`agent_builder`/`rag_app_builder` 的 context_memory 命中率 100%，各 n=300），不是独立源。`signals/verify_archetype.py` 输出 NOT_RUN，记为 `signals-baseline.md` 第 5 条口径缺陷。
+- 正确解法 = **换底物不换尺**：尺（八轴正则 + 标题家族）不变，底物换成 HN 社区自发招聘帖（2026-10/11 Ask HN Who is hiring，390 条）。`signals/verify_hn_independent.py` 方向复刻成功：ai_only 八轴均值 **0.714 > platform_only 0.518**，context_memory 是 ai_only 头号轴 **23.8%**，H1/H2 全 SUPPORTED + 3 反证全过。边界：绝对值不同（主表 65.5%），只复刻排序不复刻比例；ai_n=21/plat_n=27 刚过门槛。落盘 `signals/hn-independent-validation-2026-11-18.md`。
+
+**③ 在招复核**：60 条 → **57 ONLINE / 3 GONE**。新增下线 = 诺因智能（2025-11-21 帖）；另两条 MiniMax 11-17 已下线。原始判据 `signals/liveness_2026-11-18.json`，`jobs-live-2026-11-17.md` 已标删除线。
+
+**门禁回归全绿**：archetype(NOT_RUN 正确态 + 3 反证)、hn(SUPPORTED + 3 反证)、liveness(selftest + prove-red)；既有 run_eval 25/25、mcp 11/11、gate_contract PASS 未回退。

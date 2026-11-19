@@ -1,0 +1,128 @@
+{
+  "schema": "eval-dataset/v1",
+  "name": "kickstart-standard-eval-dataset",
+  "description": "标准化评测数据集样例：从 28 条用例实例化，每条含 input/expected_label/axis/来源/复现命令",
+  "axes": [
+    "cost",
+    "plan",
+    "tool"
+  ],
+  "item_count": 6,
+  "items": [
+    {
+      "id": "happy_path",
+      "input": {
+        "corpus": "sample_input"
+      },
+      "expected_label": {
+        "expect_status": "succeeded",
+        "expect_report_contains": [
+          "# Report: Agent Infra",
+          "## Top keywords",
+          "## Per-file stats"
+        ],
+        "expect_files_analyzed": 3,
+        "expect_min_keywords": 5
+      },
+      "axis": "plan",
+      "verdict_on_contract": true,
+      "source": "eval/cases/cases.json",
+      "reproduce": "python3 eval/run_eval.py happy_path"
+    },
+    {
+      "id": "resume_after_write_failure",
+      "input": {
+        "corpus": "sample_input",
+        "fail_on_step": "write_report"
+      },
+      "expected_label": {
+        "expect_status": "succeeded",
+        "expect_report_contains": [
+          "# Report: Agent Infra",
+          "Files analyzed: 3"
+        ],
+        "expect_files_analyzed": 3
+      },
+      "axis": "plan",
+      "verdict_on_contract": true,
+      "source": "eval/cases/cases.json",
+      "reproduce": "python3 eval/run_eval.py resume_after_write_failure"
+    },
+    {
+      "id": "tool_list_files_nested_glob",
+      "input": {
+        "corpus": "nested",
+        "tool": {
+          "name": "list_files",
+          "args": {
+            "directory": "corpus/edge",
+            "glob": "*.txt",
+            "limit": 50
+          }
+        }
+      },
+      "expected_label": {
+        "expect_output_value": {
+          "count": 5
+        }
+      },
+      "axis": "tool",
+      "verdict_on_contract": true,
+      "source": "eval/cases/cases.json",
+      "reproduce": "python3 eval/run_eval.py tool_list_files_nested_glob"
+    },
+    {
+      "id": "tool_path_escape_blocked",
+      "input": {
+        "corpus": "sample_input",
+        "tool": {
+          "name": "write_text",
+          "args": {
+            "path": "../escape.md",
+            "content": "x"
+          }
+        }
+      },
+      "expected_label": {
+        "expect_tool_ok": false,
+        "expect_error_code": "PATH_ESCAPE"
+      },
+      "axis": "tool",
+      "verdict_on_contract": true,
+      "source": "eval/cases/cases.json",
+      "reproduce": "python3 eval/run_eval.py tool_path_escape_blocked"
+    },
+    {
+      "id": "cost_summary_clean_rows",
+      "input": {
+        "corpus": "notes"
+      },
+      "expected_label": {
+        "expect_status": "succeeded",
+        "expect_files_analyzed": 4,
+        "expect_cost_mismatches": 0,
+        "expect_cost_positive": true,
+        "expect_cost_tokens_min": 500
+      },
+      "axis": "cost",
+      "verdict_on_contract": true,
+      "source": "eval/cases/cases.json",
+      "reproduce": "python3 eval/run_eval.py cost_summary_clean_rows"
+    },
+    {
+      "id": "cost_summary_detects_tampered_row",
+      "input": {
+        "corpus": "notes"
+      },
+      "expected_label": {
+        "expect_status": "succeeded",
+        "expect_files_analyzed": 4,
+        "expect_cost_mismatches": 1
+      },
+      "axis": "cost",
+      "verdict_on_contract": true,
+      "source": "eval/cases/cases.json",
+      "reproduce": "python3 eval/run_eval.py cost_summary_detects_tampered_row"
+    }
+  ]
+}

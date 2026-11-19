@@ -19,6 +19,10 @@ class ToolTimeout(Exception):
 _deadline: contextvars.ContextVar[float | None] = contextvars.ContextVar("deadline", default=None)
 _TICK_EVERY = 200  # check the clock every N loop iterations, not every iteration
 
+# 窗口化视图的服务端硬上限（调用方不能靠调大参数绕过）
+_VIEW_MAX_LINES = 200
+_VIEW_MAX_CHARS = 20000
+
 
 def set_deadline(seconds: float | None):
     if seconds is None:
@@ -229,8 +233,63 @@ def build_default_registry(run_dir: Path, input_dir: Path | None = None) -> Tool
         except Exception as e:  # noqa: BLE001
             return ToolResult(False, error=repr(e), error_code="SUMMARIZE_ERROR")
 
+    def read_file_window(path: str, start_line: int = 1, max_lines: int = 200,
+                         max_chars: int = 20000) -> ToolResult:
+        """窗口化文件视图（harness 改造 3）。
+
+        一次只回一页行，带行号、总行数与 next_start；超出上限按字符截断并
+        显式报 truncated=True，不 silently 把整文件塞进工具输出。
+        上限由服务端裁决，调用方不能通过更大的参数绕过。
+        """
+        try:
+            _tick(0)
+            if not isinstance(start_line, int) or start_line < 1:
+                return ToolResult(False, error="start_line must be >= 1", error_code="BAD_INPUT")
+            if not isinstance(max_lines, int) or not (1 <= max_lines <= _VIEW_MAX_LINES):
+                return ToolResult(False, error=f"max_lines must be in [1,{_VIEW_MAX_LINES}]", error_code="BAD_INPUT")
+            if not isinstance(max_chars, int) or not (1 <= max_chars <= _VIEW_MAX_CHARS):
+                return ToolResult(False, error=f"max_chars must be in [1,{_VIEW_MAX_CHARS}]", error_code="BAD_INPUT")
+            target = _resolve_readable(run_dir, input_dir, path)
+            if not target.exists() or not target.is_file():
+                return ToolResult(False, error=f"file not found: {path}", error_code="NOT_FOUND")
+            # 只读需要的行段：逐行扫描到 start_line + max_lines，不把全文存进内存。
+            selected: List[str] = []
+            total = 0
+            with target.open("r", encoding="utf-8", errors="replace") as f:
+                for i, line in enumerate(f, 1):
+                    total = i
+                    if i < start_line:
+                        continue
+                    if len(selected) < max_lines:
+                        selected.append(line.rstrip("\n"))
+            used = 0
+            lines = []
+            truncated = False
+            for offset, text in enumerate(selected):
+                if used + len(text) > max_chars:
+                    room = max_chars - used
+                    lines.append(f"{start_line + offset:6d} | {text[:room]}")
+                    used = max_chars
+                    truncated = True
+                    break
+                lines.append(f"{start_line + offset:6d} | {text}")
+                used += len(text)
+            next_start = start_line + len(lines) if (start_line + len(lines) - 1) < total else None
+            return ToolResult(True, {
+                "path": str(target), "start_line": start_line,
+                "total_lines": total, "returned_lines": len(lines),
+                "chars": used, "truncated": truncated,
+                "next_start": next_start,
+                "content": "\n".join(lines),
+            })
+        except ToolTimeout as e:
+            return ToolResult(False, error=str(e), error_code="TIMEOUT")
+        except Exception as e:  # noqa: BLE001
+            return ToolResult(False, error=repr(e), error_code="VIEW_ERROR")
+
     reg.register("list_files", list_files)
     reg.register("extract_keywords", extract_keywords)
     reg.register("write_text", write_text)
     reg.register("summarize_text", summarize_text)
+    reg.register("read_file_window", read_file_window)
     return reg

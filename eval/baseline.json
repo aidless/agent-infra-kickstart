@@ -1,0 +1,122 @@
+{
+  "baseline_sha12": {
+    "cases": "d3633004e426",
+    "runner": "3f53d3936ea7",
+    "contract": "029c2fe2f746"
+  },
+  "summary": "eval-gate: verdict=PASS problems=0 total=28 passed=28 failed=0",
+  "cases": [
+    {
+      "name": "happy_path",
+      "passed": true
+    },
+    {
+      "name": "resume_after_write_failure",
+      "passed": true
+    },
+    {
+      "name": "fail_fast_no_resume",
+      "passed": true
+    },
+    {
+      "name": "missing_input_dir",
+      "passed": true
+    },
+    {
+      "name": "real_corpus_notes",
+      "passed": true
+    },
+    {
+      "name": "real_corpus_nested_only",
+      "passed": true
+    },
+    {
+      "name": "edge_mixed_empty_and_binary",
+      "passed": true
+    },
+    {
+      "name": "edge_truly_empty_dir",
+      "passed": true
+    },
+    {
+      "name": "edge_binary_decode_tolerated",
+      "passed": true
+    },
+    {
+      "name": "step_timeout_interrupts_then_resumes",
+      "passed": true
+    },
+    {
+      "name": "retry_budget_then_interrupt",
+      "passed": true
+    },
+    {
+      "name": "rerun_idempotent_report",
+      "passed": true
+    },
+    {
+      "name": "tool_list_files_nested_glob",
+      "passed": true
+    },
+    {
+      "name": "tool_path_escape_blocked",
+      "passed": true
+    },
+    {
+      "name": "tool_write_idempotent_second_call",
+      "passed": true
+    },
+    {
+      "name": "tool_extract_keywords_bad_input",
+      "passed": true
+    },
+    {
+      "name": "tool_extract_keywords_missing_file",
+      "passed": true
+    },
+    {
+      "name": "tool_summarize_real_doc",
+      "passed": true
+    },
+    {
+      "name": "tool_unknown_tool_rejected",
+      "passed": true
+    },
+    {
+      "name": "resume_after_complete_is_noop",
+      "passed": true
+    },
+    {
+      "name": "edge_single_empty_file",
+      "passed": true
+    },
+    {
+      "name": "retry_backoff_schedule_exponential",
+      "passed": true
+    },
+    {
+      "name": "cost_fields_on_every_step",
+      "passed": true
+    },
+    {
+      "name": "cost_summary_clean_rows",
+      "passed": true
+    },
+    {
+      "name": "cost_summary_detects_tampered_row",
+      "passed": true
+    },
+    {
+      "name": "tool_read_file_window_page",
+      "passed": true
+    },
+    {
+      "name": "tool_read_file_window_oversized_params_rejected",
+      "passed": true
+    },
+    {
+      "name": "tool_read_file_window_missing_file",
+      "passed": true
+    }
+  ]
+}

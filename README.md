@@ -26,7 +26,7 @@ python3 -m agent.main show <session_id>
 #    退避 + 非默认价目表
 python3 -m agent.main run --topic "agent" --input-dir corpus/edge --timeout-ms 1 --max-retries 3 --backoff-base-ms 400 --price-id fixture-cheap
 
-# 4) 评测门禁（25 个用例：16 条会话级 + 7 条工具级 + 2 条成本汇总级，全绿退出 0）
+# 4) 评测门禁（28 个用例：16 条会话级 + 10 条工具级 + 2 条成本汇总级，全绿退出 0）
 python3 eval/run_eval.py
 
 #    只跑单条（调试用）
@@ -48,7 +48,7 @@ python3 signals/analyze_axes.py --prove-red
 python3 signals/analyze_axes.py
 python3 signals/analyze_axes.py --globs 'enriched_zh.json' --out signals/raw/axes_report_zh.json  # 中文切片
 
-# 7) 真 MCP server（stdio + JSON-RPC 2.0，把 4 个工具注册为 MCP tools）
+# 7) 真 MCP server（stdio + JSON-RPC 2.0，把 5 个工具注册为 MCP tools）
 python3 eval/mcp_selftest.py            # 11 项协议/沙盒/真实 stdio 子进程检查，全绿 exit 0
 python3 eval/mcp_selftest.py --prove-red  # 3 处注入（isError/tool list/握手门）每处必须红
 # 手动握手示例（stdin 一行一个 JSON-RPC 消息，stdout 只出协议）：
@@ -57,6 +57,13 @@ printf '%s\n' \
   '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
   '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
   | python3 mcp_server.py --run-dir runs/demo --input-dir sample_input
+
+# 8) 榜单管理 + 回归检测（对齐 JD「榜单管理/回归检测」）
+python3 eval/board.py --rank          # 榜单：按 通过/mode/name 排序，含成本/耗时列
+python3 eval/board.py --save-baseline # 存基线（绑定 content_sha12）
+python3 eval/board.py --regression    # 回归对比，有回归 exit 1
+python3 eval/board.py --selftest      # 自检（构造数据验排序与回归检出）
+python3 eval/board.py --prove-red     # 桩下自检必红
 ```
 
 ## 产物位置（每次运行一个目录）
@@ -71,14 +78,18 @@ printf '%s\n' \
 | 状态模型落盘 + 恢复跳过已成功步骤 | `agent/state.py`、`agent/runner.py` | 中断→resume 后 `draft` 不重跑、后续步骤补跑 |
 | 幂等写入 | `agent/tools.py` `write_text` | 同内容二次写入 `written=false, idempotent=true` |
 | 路径逃逸防护 | `agent/tools.py` `_resolve_inside` | `../escape.md` → `PATH_ESCAPE` |
-| Trace（耗时/错误码/参数摘要） | `agent/state.py` `append_trace`、`agent/runner.py` | `trace.jsonl` 每步一条 |
-| 步骤级超时预算（协作式 deadline） | `agent/tools.py` `set_deadline`/`_tick`、`agent/runner.py` | `timeout_ms` 注入后 `error_code=TIMEOUT`，重试 1 次仍失败 → `interrupted` 且后续步骤保持 pending |
-| 失败分级：可重试 → interrupted，不可重试 → failed | `agent/tools.py` `RETRYABLE_ERROR_CODES`、`agent/runner.py` | `BAD_INPUT`/`NOT_FOUND`/`PATH_ESCAPE` 直接 failed；`TIMEOUT` 等留 pending 可续跑 |
+| 运行轨迹 Trace（耗时/错误码/参数摘要，支持回放复现） | `agent/state.py` `append_trace`、`agent/runner.py` | `trace.jsonl` 每步一条，可回放复现 |
+| 步骤级超时控制（协作式 deadline） | `agent/tools.py` `set_deadline`/`_tick`、`agent/runner.py` | `timeout_ms` 注入后 `error_code=TIMEOUT`，失败重试 1 次仍失败 → `interrupted` 且后续步骤保持 pending |
+| 失败重试与分级：可重试 → interrupted，不可重试 → failed | `agent/tools.py` `RETRYABLE_ERROR_CODES`、`agent/runner.py` | `BAD_INPUT`/`NOT_FOUND`/`PATH_ESCAPE` 直接 failed；`TIMEOUT` 等留 pending 可续跑 |
 | 完成后再 resume 是 no-op | `agent/runner.py` | 第二次 resume 不再追加 `session.succeeded` 事件 |
-| 指数退避（`backoff_delay_ms`） | `agent/runner.py` | `base=200, cap=400, retries=3` → 事件流里恰好 `[200, 400, 400]` |
+| 失败重试指数退避（`backoff_delay_ms`） | `agent/runner.py` | `base=200, cap=400, retries=3` → 事件流里恰好 `[200, 400, 400]` |
 | 成本可复算 | `agent/cost.py`、`agent/main.py` `trace_cost_summary` | 行内记下费率，`cost_usd == tokens × 行内费率 ÷ 1e6` 逐行校验；`show` 的 `mismatches` 必须为空 |
-| 评测门禁 + 红证 | `eval/run_eval.py`、`eval/prove_red.py` | 25/25 绿；5 处注入违规 → 各自 exit 1 |
-| 真 MCP server（stdio） | `mcp_server.py`、`eval/mcp_selftest.py` | 4 工具注册为 MCP tools，握手/版本协商/isError/沙盒全绿；3 处注入各红 |
+| 评测门禁 + 红证 | `eval/run_eval.py`、`eval/prove_red.py` | 28/28 绿；5 处注入违规 → 各自 exit 1 |
+| 空 diff guard（终态前） | `agent/finish_guard.py` `empty_diff_guard`、`agent/runner.py` | 无产物且无 written 声明 → `EMPTY_DIFF`，记 `session.blocked_by_guard`；账本类文件不计入 |
+| pre-stop verifier（终态前） | `agent/finish_guard.py` `prestop_verify` | 产物非空 → .py 可编译 → `AIK_VERIFY_CMD` rc=0，三项全过才记 `succeeded` |
+| 窗口化文件视图 | `agent/tools.py` `read_file_window` | 按行分页 + 服务端硬上限（200 行 / 20000 字符），超限 `truncated=true` 且给 `next_start` |
+| 真 MCP server（stdio） | `mcp_server.py`、`eval/mcp_selftest.py` | 5 工具注册为 MCP tools，握手/版本协商/isError/沙盒全绿；3 处注入各红 |
+| 榜单管理 + 回归检测 | `eval/board.py` | `--rank` 榜单（按 通过/mode/name 排序，含成本/耗时列）；`--save-baseline` 存基线；`--regression` 对比，有回归 exit 1（注入 happy_path 失败 → 检出 1 条回归 exit 1）；`--selftest`/`--prove-red` 双门 |
 
 ## 本周立即执行（Week 0）
 - [x] 确认项目场景与最小范围（见 [project-spec.md](project-spec.md)）
@@ -91,7 +102,7 @@ printf '%s\n' \
 - `signals/`：采集与测量管线，`fetch_freehire.py`（72 查询 → 11638 条）→ `classify.py`（三档分类）→ `enrich_tier_a.py`（4017 条带正文）→ `analyze_axes.py`（8 轴测量 + 职级分层 + 标题家族交叉，带 `--selftest` 与 `--prove-red` 四处注入）；`fetch_zh.py` 单独抓中文切片（**1379 条**，`--globs 'enriched_zh.json'` 分开出表，不与主表混算）
 - `weekly-log.md`：每周产出与复盘记录（代码/实验/看板更新留证）
 - `agent/`：最小 Agent 实现（state / tools / runner / main）
-- `eval/`：评测用例、门禁、红证脚本；[COVERAGE.md](eval/COVERAGE.md) 是 25 条用例的逐条覆盖表（含「有意不测的部分」）
+- `eval/`：评测用例、门禁、红证脚本；[COVERAGE.md](eval/COVERAGE.md) 是 28 条用例的逐条覆盖表（16 会话级 + 10 工具级 + 2 成本汇总级，含「有意不测的部分」）
 - `sample_input/`：合成的小语料（3 文件，快速回归用）
 - `corpus/`：真实语料与边界样本——`notes/`（从本工作区 `notes/` 复制的 4 篇真实笔记）、`edge/`（空文件/非 UTF-8/单行/20k 行大文件/嵌套目录）、`mixed/`、`truly_empty/`、`one_file/`、`binary/`
 

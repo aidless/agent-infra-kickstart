@@ -205,7 +205,9 @@ def c_stdio_subprocess():
         assert proc.returncode == 0, (proc.returncode, proc.stderr)
         lines = [json.loads(x) for x in proc.stdout.strip().splitlines() if x.strip()]
         assert [x["id"] for x in lines] == [1, 2, 3], lines
-        assert len(lines[1]["result"]["tools"]) == 4, lines[1]
+        assert len(lines[1]["result"]["tools"]) == 5, lines[1]
+        names = {t["name"] for t in lines[1]["result"]["tools"]}
+        assert "read_file_window" in names, names
         assert lines[2]["result"]["isError"] is False, lines[2]
     return None
 
