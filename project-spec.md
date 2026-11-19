@@ -25,7 +25,7 @@
 ## 3. 工具与治理（逐步加入）
 - 统一工具接口：`name / version / input_schema / output / error`。
 - 权限与审计：工具调用参数与结果摘要写入事件/日志；敏感凭据不落盘明文。
-- **已实现**：`mcp_server.py` 实现 MCP 规范 2025-06-18 的 stdio 传输与 JSON-RPC 2.0 生命周期（initialize/版本协商/initialized/tools/list/tools/call/ping），把 4 个工具注册为带 inputSchema 的 MCP tools；`write_text` 保持 PATH_ESCAPE 沙盒；`eval/mcp_selftest.py` 11 项检查 + 3 处注入反证。
+- **已实现**：`mcp_server.py` 实现 MCP 规范 2025-06-18 的 stdio 传输与 JSON-RPC 2.0 生命周期（initialize/版本协商/initialized/tools/list/tools/call/ping），把 5 个工具注册为带 inputSchema 的 MCP tools；`write_text` 保持 PATH_ESCAPE 沙盒；`eval/mcp_selftest.py` 11 项检查 + 3 处注入反证；`eval/mcp_e2e.py` 真 client 经 stdio 驱动完整 4 步业务流程 12 项检查 + 反证。
 
 ## 4. 可观测与评测
 - **观测**：结构化日志 + Trace（step 耗时、工具调用、错误码），能定位一次失败到具体步骤。

@@ -5,6 +5,7 @@
 > 契约层：`eval/last_contract.json` 是给 CI 消费的机器可读结果；首行 `eval-gate: verdict=... problems=N`，exit 0 PASS / 1 FAIL / 2 用法错 / 3 闸没执行（不等于通过）。8 类故障见红：`python3 eval/gate_contract_selftest.py`；自检自身的反证：`--prove-red`（always-PASS 桩下从 8/8 掉到 2/8）。每条 case 的 `metrics` 带 duration_ms 与从该会话 trace 逐行重算的 tokens/cost；正控用例故意篡改的那 1 处 mismatch 在契约里保留。
 > 语料全部本地落盘，无网络依赖，无时间随机性；语料根见 `eval/run_eval.py` 的 `CORPUS` 字典。
 > MCP 协议门：`python3 eval/mcp_selftest.py`（11 项：握手/版本协商/未握手拦截/tools-list 4 工具/读调用/幂等写/沙盒逃逸/未知工具/协议错误码/batch/真实 stdio 子进程）；反证 `--prove-red` 注入 3 处违规（isError 失效 / 工具表清空 / 握手门跳过）每处必红。
+> MCP 端到端门：`python3 eval/mcp_e2e.py`（12 项：真 client 经 stdio 跑 initialize→tools/list→list_files→extract_keywords→write_text→summarize_text→read_file_window→幂等写→PATH_ESCAPE→未知工具）；反证 `--prove-red` 把 step3 期望写错必红。
 
 ## 一、会话级（16 条，走完整默认 4 步计划）
 

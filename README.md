@@ -51,6 +51,8 @@ python3 signals/analyze_axes.py --globs 'enriched_zh.json' --out signals/raw/axe
 # 7) 真 MCP server（stdio + JSON-RPC 2.0，把 5 个工具注册为 MCP tools）
 python3 eval/mcp_selftest.py            # 11 项协议/沙盒/真实 stdio 子进程检查，全绿 exit 0
 python3 eval/mcp_selftest.py --prove-red  # 3 处注入（isError/tool list/握手门）每处必须红
+python3 eval/mcp_e2e.py                 # 真 client 经 stdio 驱动完整 4 步业务流程（12 项检查）
+python3 eval/mcp_e2e.py --prove-red     # 反证：step3 期望写错必红
 # 手动握手示例（stdin 一行一个 JSON-RPC 消息，stdout 只出协议）：
 printf '%s\n' \
   '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"demo","version":"0"}}}' \
@@ -89,6 +91,7 @@ python3 eval/board.py --prove-red     # 桩下自检必红
 | pre-stop verifier（终态前） | `agent/finish_guard.py` `prestop_verify` | 产物非空 → .py 可编译 → `AIK_VERIFY_CMD` rc=0，三项全过才记 `succeeded` |
 | 窗口化文件视图 | `agent/tools.py` `read_file_window` | 按行分页 + 服务端硬上限（200 行 / 20000 字符），超限 `truncated=true` 且给 `next_start` |
 | 真 MCP server（stdio） | `mcp_server.py`、`eval/mcp_selftest.py` | 5 工具注册为 MCP tools，握手/版本协商/isError/沙盒全绿；3 处注入各红 |
+| MCP 端到端（真 client） | `eval/mcp_e2e.py` | 真 client 经 stdio 跑完整 4 步（list→extract→write→summarize）+ 幂等/沙盒/未知工具，12 项全绿；反证必红 |
 | 榜单管理 + 回归检测 | `eval/board.py` | `--rank` 榜单（按 通过/mode/name 排序，含成本/耗时列）；`--save-baseline` 存基线；`--regression` 对比，有回归 exit 1（注入 happy_path 失败 → 检出 1 条回归 exit 1）；`--selftest`/`--prove-red` 双门 |
 
 ## 本周立即执行（Week 0）
