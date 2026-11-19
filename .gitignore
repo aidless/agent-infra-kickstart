@@ -31,3 +31,8 @@ signals/gen_deliver_pack.py
 signals/deliver-pack-*.md
 
 .pytest_cache/
+
+# 构建产物
+build/
+dist/
+*.egg-info/
