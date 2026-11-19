@@ -1,0 +1,29 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install -e ".[dev]"
+
+      - name: 单元测试
+        run: python -m pytest -q
+
+      - name: 评测门禁（28 例全绿）
+        run: python eval/run_eval.py
+
+      - name: 反证（5 处注入必须全红）
+        run: python eval/prove_red.py
+
+      - name: MCP 协议自检（11 项）
+        run: python eval/mcp_selftest.py
+
+      - name: MCP 反证（3 处注入必须全红）
+        run: python eval/mcp_selftest.py --prove-red
