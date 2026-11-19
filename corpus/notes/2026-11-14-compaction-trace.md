@@ -1,6 +1,6 @@
 # 压缩轨迹 — session-70746f9f-5dad-4cc0-bc80-d46735b72fd6
 
-源：`/home/liuzewen/.dsh/sessions/--home-liuzewen-F-deepseek--/session-70746f9f-5dad-4cc0-bc80-d46735b72fd6/session.v4.jsonl.zstd`
+源：`~/.dsh/sessions/<session-dir>/session-70746f9f-5dad-4cc0-bc80-d46735b72fd6/session.v4.jsonl.zstd`
 
 | 字段 | 值 | 说明 |
 |---|---|---|
